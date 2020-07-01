@@ -4,5 +4,8 @@
 
 class Sphere : public Base {
  public:
-  void run() override;
+  Sphere();
+
+  void setup() override;
+  void step() override;
 };

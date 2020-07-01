@@ -58,27 +58,28 @@ void decode_options(int argc, char* argv[], Options* op) {
   }
 }
 
-void run_simulation(const Options& op) {
+std::unique_ptr<Base> get_simulation(const std::string& name) {
   std::unique_ptr<Base> sim;
 
-  if (op.simulation_name == "sphere") {
+  if (name == "sphere") {
     sim = std::make_unique<Sphere>();
   }
 
-  if (sim) {
-    sim->setup(op);
-    sim->run();
-  } else {
+  if (!sim) {
     std::cerr << "wrong simulation name" << std::endl;
     exit(EXIT_FAILURE);
   }
+
+  return std::move(sim);
 }
 
 int main(int argc, char* argv[]) {
   Options op;
 
   decode_options(argc, argv, &op);
-  run_simulation(op);
+  std::unique_ptr<Base> sim = get_simulation(op.simulation_name);
+
+  sim->run(op);
 
   return 0;
 }
