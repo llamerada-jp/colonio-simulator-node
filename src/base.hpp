@@ -1,5 +1,7 @@
 #pragma once
 
+#include <chrono>
+
 #include "colonio/colonio.hpp"
 
 struct Options {
@@ -16,12 +18,15 @@ class Base : public colonio::Colonio {
 
   void run(const Options& options);
 
-  virtual void setup() = 0;
-  virtual void step()  = 0;
-
  protected:
   Options options;
   const unsigned int interval;
 
   void on_output_log(colonio::LogLevel level, const std::string& message) override;
+
+  static std::chrono::system_clock::time_point msec_start;
+  static int64_t get_current_msec();
+
+  virtual void setup() = 0;
+  virtual void step()  = 0;
 };
