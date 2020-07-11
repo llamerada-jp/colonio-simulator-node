@@ -4,7 +4,9 @@
 #include <iostream>
 #include <thread>
 
-Base::Base(unsigned int interval_) : interval(interval_) {
+#include "logger.hpp"
+
+Base::Base(Logger& logger_, unsigned int interval_) : logger(logger_), interval(interval_) {
 }
 
 Base::~Base() {
@@ -29,7 +31,7 @@ void Base::run(const Options& options_) {
 }
 
 void Base::on_output_log(const std::string& json) {
-  std::cout << json << std::endl;
+  logger.output(json);
 }
 
 std::chrono::system_clock::time_point Base::msec_start = std::chrono::system_clock::now();

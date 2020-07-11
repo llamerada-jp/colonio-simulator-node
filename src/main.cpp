@@ -7,6 +7,7 @@
 #include <string>
 
 #include "base.hpp"
+#include "logger.hpp"
 #include "sphere/sphere.hpp"
 
 option options[] = {
@@ -58,11 +59,11 @@ void decode_options(int argc, char* argv[], Options* op) {
   }
 }
 
-std::unique_ptr<Base> get_simulation(const std::string& name) {
+std::unique_ptr<Base> get_simulation(Logger& logger, const std::string& name) {
   std::unique_ptr<Base> sim;
 
   if (name == "sphere") {
-    sim = std::make_unique<Sphere>();
+    sim = std::make_unique<Sphere>(logger);
   }
 
   if (!sim) {
@@ -75,9 +76,12 @@ std::unique_ptr<Base> get_simulation(const std::string& name) {
 
 int main(int argc, char* argv[]) {
   Options op;
+  Logger logger;
 
   decode_options(argc, argv, &op);
-  std::unique_ptr<Base> sim = get_simulation(op.simulation_name);
+  logger.setup("mongodb://localhost:27017");
+
+  std::unique_ptr<Base> sim = get_simulation(logger, op.simulation_name);
 
   sim->run(op);
 

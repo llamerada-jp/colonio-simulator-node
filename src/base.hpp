@@ -11,15 +11,18 @@ struct Options {
   std::string seed_token;
 };
 
+class Logger;
+
 class Base : public colonio::Colonio {
  public:
-  Base(unsigned int interval_);
+  Base(Logger& logger_, unsigned int interval_);
   virtual ~Base();
 
   void run(const Options& options);
 
  protected:
   Options options;
+  Logger& logger;
   const unsigned int interval;
 
   void on_output_log(const std::string& json) override;

@@ -8,7 +8,7 @@ std::mt19937 mt(rd());
 std::uniform_real_distribution<double> rand_ang(-M_PI / 2, M_PI / 2);
 std::uniform_real_distribution<double> rand_speed(0, 2 * M_PI * 27.77 / 40075000);
 
-Sphere::Sphere() : Base(1000) {
+Sphere::Sphere(Logger& logger) : Base(logger, 1000) {
 }
 
 void Sphere::setup() {
