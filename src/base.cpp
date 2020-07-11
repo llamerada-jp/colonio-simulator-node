@@ -28,8 +28,8 @@ void Base::run(const Options& options_) {
   }
 }
 
-void Base::on_output_log(colonio::LogLevel level, const std::string& message) {
-  std::cout << message << std::endl;
+void Base::on_output_log(const std::string& json) {
+  std::cout << json << std::endl;
 }
 
 std::chrono::system_clock::time_point Base::msec_start = std::chrono::system_clock::now();

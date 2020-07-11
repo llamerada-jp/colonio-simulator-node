@@ -22,7 +22,7 @@ class Base : public colonio::Colonio {
   Options options;
   const unsigned int interval;
 
-  void on_output_log(colonio::LogLevel level, const std::string& message) override;
+  void on_output_log(const std::string& json) override;
 
   static std::chrono::system_clock::time_point msec_start;
   static int64_t get_current_msec();
