@@ -1,17 +1,22 @@
 #pragma once
 
-#include <mongocxx/client.hpp>
-#include <mongocxx/instance.hpp>
+#include <mongoc/mongoc.h>
+
 #include <string>
+
+class Config;
 
 class Logger {
  public:
-  void setup(const std::string& uri);
-  void output(const std::string& json);
+  Logger();
+  virtual ~Logger();
+
+  void setup(const Config &config);
+  void output(const std::string &json);
 
  private:
-  static mongocxx::instance instance;
-  std::unique_ptr<mongocxx::client> client;
-  mongocxx::database db;
-  mongocxx::collection coll;
+  mongoc_uri_t *uri;
+  mongoc_client_t *client;
+  mongoc_database_t *database;
+  mongoc_collection_t *collection;
 };

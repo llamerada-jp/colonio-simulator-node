@@ -1,9 +1,13 @@
-FROM ubuntu:18.04 AS build-env
-RUN apt-get update && \
-  apt-get install -y build-essential cmake dh-autoreconf git libc6 libprotobuf-dev libssl-dev pkg-config
+FROM ubuntu:20.04 AS build-env
+RUN apt-get update && apt-get install -y tzdata
+RUN apt-get install -y build-essential cmake dh-autoreconf git libc6 libicu-dev libmongoc-dev libprotobuf-dev libssl-dev libzstd-dev pkg-config
 
 WORKDIR /work
 RUN mkdir -p /work/local/include /work/local/lib
+
+# picojson
+WORKDIR /work/local/include
+RUN git clone https://github.com/kazuho/picojson.git
 
 # protoc
 WORKDIR /work
@@ -31,10 +35,10 @@ WORKDIR /work/simulations
 RUN cmake -DLOCAL_ENV_PATH=/work/local . && \
   make
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 RUN mkdir -p /usr/local/lib && \
   apt-get update && \
-  apt-get install -y libssl1.1
+  apt-get install -y libssl1.1 libmongoc-1.0
 COPY --from=build-env /work/local/lib/libprotobuf.so.21.0.1 /usr/lib/libprotobuf.so.21
 COPY --from=build-env /work/simulations/simulations /simulations
 ENTRYPOINT /simulations

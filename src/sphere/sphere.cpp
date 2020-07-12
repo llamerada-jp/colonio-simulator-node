@@ -2,17 +2,20 @@
 
 #include <iostream>
 #include <random>
+#include <string>
+
+#include "../config.hpp"
 
 std::random_device rd;
 std::mt19937 mt(rd());
 std::uniform_real_distribution<double> rand_ang(-M_PI / 2, M_PI / 2);
 std::uniform_real_distribution<double> rand_speed(0, 2 * M_PI * 27.77 / 40075000);
 
-Sphere::Sphere(Logger& logger) : Base(logger, 1000) {
+Sphere::Sphere(const Config& config, Logger& logger) : Base(config, logger, 1000) {
 }
 
 void Sphere::setup() {
-  connect(options.seed_url, options.seed_token);
+  connect(config.get<std::string>("seed.url", "ws://localhost"), config.get<std::string>("seed.token", ""));
 
   current_x          = std::uniform_real_distribution<double>(-M_PI, M_PI)(mt);
   current_y          = std::uniform_real_distribution<double>(-M_PI / 2, M_PI / 2)(mt);

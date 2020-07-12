@@ -10,11 +10,13 @@ include_directories(${LOCAL_ENV_PATH}/include)
 link_directories(${LOCAL_ENV_PATH}/lib)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
 
-include_directories(/opt/mongo-cxx-driver/include/mongocxx/v_noabi)
-include_directories(/opt/mongo-cxx-driver/include/bsoncxx/v_noabi)
-include_directories(/opt/mongo-c-driver/include/libmongoc-1.0)
-include_directories(/opt/mongo-c-driver/include/libbson-1.0)
-link_directories(/opt/mongo-cxx-driver/lib)
+# MongoDB(libmongoc)
+find_package (libmongoc-1.0 1.16 REQUIRED)
+
+message ("--   mongoc found version \"${MONGOC_VERSION}\"")
+message ("--   mongoc include path \"${MONGOC_INCLUDE_DIRS}\"")
+message ("--   mongoc libraries \"${MONGOC_LIBRARIES}\"")
+include_directories(${MONGOC_INCLUDE_DIRS})
 
 # OpenSSL
 find_package(OpenSSL REQUIRED)
@@ -22,6 +24,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_executable(simulations
   src/base.cpp
+  src/config.cpp
   src/logger.cpp
   src/main.cpp
   src/sphere/sphere.cpp
@@ -31,8 +34,7 @@ target_link_libraries(simulations
   colonio
   webrtc
   protobuf
-  ${OPENSSL_LIBRARIES}
   pthread
-  mongocxx
-  bsoncxx
+  ${OPENSSL_LIBRARIES}
+  ${MONGOC_LIBRARIES}
   )

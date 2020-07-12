@@ -6,15 +6,14 @@
 
 #include "logger.hpp"
 
-Base::Base(Logger& logger_, unsigned int interval_) : logger(logger_), interval(interval_) {
+Base::Base(const Config& config_, Logger& logger_, unsigned int interval_) :
+    config(config_), logger(logger_), interval(interval_) {
 }
 
 Base::~Base() {
 }
 
-void Base::run(const Options& options_) {
-  options = options_;
-
+void Base::run() {
   setup();
 
   int64_t next_msec = get_current_msec();

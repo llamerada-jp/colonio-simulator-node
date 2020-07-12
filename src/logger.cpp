@@ -1,60 +1,77 @@
 #include "logger.hpp"
 
-#include <bsoncxx/json.hpp>
-#include <bsoncxx/stdx/make_unique.hpp>
+#include <cassert>
 #include <iostream>
-#include <mongocxx/exception/logic_error.hpp>
-#include <mongocxx/logger.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
 
-class MongoLogger final : public mongocxx::logger {
- public:
-  explicit MongoLogger(std::ostream* stream) : _stream(stream) {
-  }
+#include "config.hpp"
 
-  void operator()(
-      mongocxx::log_level level, bsoncxx::stdx::string_view domain,
-      bsoncxx::stdx::string_view message) noexcept override {
-    if (level >= mongocxx::log_level::k_trace) return;
-    *_stream << '[' << mongocxx::to_string(level) << '@' << domain << "] " << message << '\n';
-  }
+Logger::Logger() : uri(nullptr), client(nullptr), database(nullptr), collection(nullptr) {
+  mongoc_cleanup();
+}
 
- private:
-  std::ostream* const _stream;
-};
+Logger::~Logger() {
+  mongoc_collection_destroy(collection);
+  mongoc_database_destroy(database);
+  mongoc_uri_destroy(uri);
+  mongoc_client_destroy(client);
 
-mongocxx::instance Logger::instance{bsoncxx::stdx::make_unique<MongoLogger>(&std::cout)};
+  collection = nullptr;
+  database   = nullptr;
+  client     = nullptr;
+  uri        = nullptr;
 
-void Logger::setup(const std::string& uri) {
-  mongocxx::uri mongo_uri(uri);
+  mongoc_cleanup();
+}
 
-  client = std::make_unique<mongocxx::client>(mongo_uri);
-  if (!(*client)) {
-    std::cout << "failed to connect mongodb : " << uri << std::endl;
+void Logger::setup(const Config& config) {
+  assert(uri == nullptr);
+  assert(client == nullptr);
+  assert(database == nullptr);
+  assert(collection == nullptr);
+
+  bson_error_t error;
+
+  std::string uri_str   = config.get<std::string>("mongodb.url");
+  std::string db_name   = config.get<std::string>("mongodb.database");
+  std::string coll_name = config.get<std::string>("mongodb.collection");
+
+  uri = mongoc_uri_new_with_error(uri_str.c_str(), &error);
+  if (!uri) {
+    fprintf(
+        stderr,
+        "failed to parse URI: %s\n"
+        "error message:       %s\n",
+        uri_str.c_str(), error.message);
     exit(EXIT_FAILURE);
   }
 
-  db = client->database("mydb");
-  if (!db) {
-    std::cout << "failed to get database : "
-              << "mydb" << std::endl;
+  client = mongoc_client_new_from_uri(uri);
+  if (!client) {
+    exit(EXIT_FAILURE);
   }
 
-  coll = db.collection("test");
-  if (!coll) {
-    std::cout << "failed to get collection : "
-              << "test" << std::endl;
-  }
+  mongoc_client_set_appname(client, "simulator");
 
-  try {
-    coll.name();
-  } catch (const mongocxx::logic_error& e) {
-    std::cout << "Using an uninitialized collection throws:" << std::endl;
-  }
+  database   = mongoc_client_get_database(client, db_name.c_str());
+  collection = mongoc_client_get_collection(client, db_name.c_str(), coll_name.c_str());
 }
 
 void Logger::output(const std::string& json) {
+  bson_error_t error;
+  bson_t* bson;
+
   std::cout << json << std::endl;
-  bsoncxx::stdx::optional<mongocxx::result::insert_one> result = coll.insert_one(bsoncxx::from_json(json));
+
+  bson = bson_new_from_json(reinterpret_cast<const uint8_t*>(json.c_str()), -1, &error);
+  if (!bson) {
+    fprintf(stderr, "%s\n", error.message);
+    exit(EXIT_FAILURE);
+  }
+
+  if (!mongoc_collection_insert_one(collection, bson, NULL, NULL, &error)) {
+    fprintf(stderr, "%s\n", error.message);
+    exit(EXIT_FAILURE);
+  }
+
+  bson_destroy(bson);
 }

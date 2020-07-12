@@ -1,0 +1,11 @@
+{
+  "simulation name": "sphere",
+  "mongodb": {
+    "url": "mongodb://localhost:27017/",
+    "database": "logs",
+    "collection": "sphere"
+  },
+  "seed": {
+    "url": "ws://localhost:8080"
+  }
+}

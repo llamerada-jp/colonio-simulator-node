@@ -4,24 +4,18 @@
 
 #include "colonio/colonio.hpp"
 
-struct Options {
-  std::string simulation_name;
-
-  std::string seed_url;
-  std::string seed_token;
-};
-
+class Config;
 class Logger;
 
 class Base : public colonio::Colonio {
  public:
-  Base(Logger& logger_, unsigned int interval_);
+  Base(const Config& config_, Logger& logger_, unsigned int interval_);
   virtual ~Base();
 
-  void run(const Options& options);
+  void run();
 
  protected:
-  Options options;
+  const Config& config;
   Logger& logger;
   const unsigned int interval;
 
