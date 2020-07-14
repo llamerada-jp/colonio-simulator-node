@@ -62,11 +62,20 @@ void Logger::output(const std::string& json) {
 
   std::cout << json << std::endl;
 
+  if (local_nid.empty() && static_cast<bool>(get_local_nid)) {
+    local_nid = get_local_nid();
+  }
+  if (local_nid.empty()) {
+    return;
+  }
+
   bson = bson_new_from_json(reinterpret_cast<const uint8_t*>(json.c_str()), -1, &error);
   if (!bson) {
     fprintf(stderr, "%s\n", error.message);
     exit(EXIT_FAILURE);
   }
+
+  BSON_APPEND_UTF8(bson, "nid", local_nid.c_str());
 
   if (!mongoc_collection_insert_one(collection, bson, NULL, NULL, &error)) {
     fprintf(stderr, "%s\n", error.message);

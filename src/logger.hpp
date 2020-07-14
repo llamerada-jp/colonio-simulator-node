@@ -2,12 +2,15 @@
 
 #include <mongoc/mongoc.h>
 
+#include <functional>
 #include <string>
 
 class Config;
 
 class Logger {
  public:
+  std::function<std::string()> get_local_nid;
+
   Logger();
   virtual ~Logger();
 
@@ -19,4 +22,6 @@ class Logger {
   mongoc_client_t *client;
   mongoc_database_t *database;
   mongoc_collection_t *collection;
+
+  std::string local_nid;
 };

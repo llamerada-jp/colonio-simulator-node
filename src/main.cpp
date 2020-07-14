@@ -73,7 +73,8 @@ int main(int argc, char* argv[]) {
   Config config = decode_options(argc, argv);
   logger.setup(config);
 
-  std::unique_ptr<Base> sim = get_simulation(config, logger, config.get<std::string>("simulation name"));
+  std::shared_ptr<Base> sim = get_simulation(config, logger, config.get<std::string>("simulation name"));
+  logger.get_local_nid      = [sim]() { return sim->get_local_nid(); };
 
   sim->run();
 
