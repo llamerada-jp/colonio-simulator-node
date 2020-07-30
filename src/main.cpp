@@ -9,6 +9,7 @@
 #include "base.hpp"
 #include "config.hpp"
 #include "logger.hpp"
+#include "plane/plane.hpp"
 #include "sphere/sphere.hpp"
 
 option options[] = {
@@ -57,6 +58,8 @@ std::unique_ptr<Base> get_simulation(const Config& config, Logger& logger, const
 
   if (name == "sphere") {
     sim = std::make_unique<Sphere>(config, logger);
+  } else if (name == "plane") {
+    sim = std::make_unique<Plane>(config, logger);
   }
 
   if (!sim) {
