@@ -29,17 +29,21 @@ void Plane::step() {
   // update position
   current_x += cos(ang) * speed;
   current_y += sin(ang) * speed;
-  while (1.0 <= current_x) {
-    current_x -= 2.0;
+  if (1.0 <= current_x) {
+    current_x = 0.999;
+    ang       = rand_ang(mt);
   }
-  while (current_x < -1.0) {
-    current_x += 2.0;
+  if (current_x < -1.0) {
+    current_x = -1.0;
+    ang       = rand_ang(mt);
   }
-  while (1.0 <= current_y) {
-    current_y -= 2.0;
+  if (1.0 <= current_y) {
+    current_y = 0.999;
+    ang       = rand_ang(mt);
   }
   while (current_y < -1.0) {
-    current_y += 2.0;
+    current_y = -1.0;
+    ang       = rand_ang(mt);
   }
 
   set_position(current_x, current_y);
