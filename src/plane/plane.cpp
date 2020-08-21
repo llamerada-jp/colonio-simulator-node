@@ -6,8 +6,17 @@
 
 #include "../config.hpp"
 
-static std::random_device rd;
-static std::mt19937 mt(rd());
+int get_random_seed() {
+  std::random_device seed_gen;
+  int seed = seed_gen();
+  // avoid WSL2 issue https://github.com/microsoft/WSL/issues/5767
+  if (seed = 0xFFFFFFFF) {
+    seed = static_cast<int>(clock());
+  }
+  return seed;
+}
+
+static std::mt19937 mt(get_random_seed());
 static std::uniform_real_distribution<double> rand_ang(-M_PI, M_PI);
 static std::uniform_real_distribution<double> rand_speed(0, 0.01);
 
