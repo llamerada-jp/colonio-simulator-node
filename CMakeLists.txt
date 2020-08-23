@@ -27,6 +27,7 @@ add_executable(simulations
   src/config.cpp
   src/logger.cpp
   src/main.cpp
+  src/mongo.cpp
   src/plane/plane.cpp
   src/sphere/sphere.cpp
   )

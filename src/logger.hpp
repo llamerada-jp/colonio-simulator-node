@@ -1,11 +1,10 @@
 #pragma once
 
-#include <mongoc/mongoc.h>
-
 #include <functional>
 #include <string>
 
 class Config;
+class Mongo;
 
 class Logger {
  public:
@@ -14,14 +13,12 @@ class Logger {
   Logger();
   virtual ~Logger();
 
-  void setup(const Config &config);
+  void setup(bool enable_stdout);
+  void set_mongo(Mongo &mongo);
   void output(const std::string &json);
 
  private:
-  mongoc_uri_t *uri;
-  mongoc_client_t *client;
-  mongoc_database_t *database;
-  mongoc_collection_t *collection;
-
+  bool enable_stdout;
+  Mongo *mongo;
   std::string local_nid;
 };
