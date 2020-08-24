@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <set>
 #include <string>
 
 class Config;
@@ -13,7 +14,7 @@ class Logger {
   Logger();
   virtual ~Logger();
 
-  void setup(bool enable_stdout);
+  void setup(const Config &config, bool enable_stdout);
   void set_mongo(Mongo &mongo);
   void output(const std::string &json);
 
@@ -21,4 +22,5 @@ class Logger {
   bool enable_stdout;
   Mongo *mongo;
   std::string local_nid;
+  std::set<std::string> filter;
 };

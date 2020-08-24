@@ -6,6 +6,8 @@
 
 #include "config.hpp"
 
+thread_local Mongo::EachThread *Mongo::eth;
+
 Mongo::Mongo() {
 }
 
@@ -14,7 +16,6 @@ Mongo::~Mongo() {
     {
       std::lock_guard<std::mutex> lock(mtx);
       flg_exit = true;
-      cond.notify_all();
     }
 
     th->join();
@@ -32,12 +33,23 @@ void Mongo::setup(const Config &config) {
   th       = std::make_unique<std::thread>(&Mongo::run, this);
 }
 
-void Mongo::output(const std::string &nid, const std::string &json) {
-  std::lock_guard<std::mutex> lock(mtx);
+void Mongo::output(const std::string &json) {
+  bson_error_t error;
 
-  logs.push(std::make_pair(nid, json));
+  if (eth == nullptr) {
+    std::unique_ptr<EachThread> e = std::make_unique<EachThread>();
+    eth                           = e.get();
 
-  cond.notify_all();
+    {
+      std::lock_guard<std::mutex> lock(mtx);
+      log_pool.insert(std::move(e));
+    }
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(eth->mtx);
+    eth->logs.push(json);
+  }
 }
 
 void Mongo::run() {
@@ -64,36 +76,52 @@ void Mongo::run() {
   mongoc_collection_t *collection = mongoc_client_get_collection(client, db_str.c_str(), coll_str.c_str());
 
   while (true) {
-    std::unique_lock<std::mutex> lock(mtx);
-    cond.wait(lock, [this] { return flg_exit || logs.size() != 0; });
+    mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation_with_opts(collection, nullptr);
+    bool has_data                 = false;
 
-    // check exit flag
-    if (flg_exit) {
-      break;
+    {
+      std::lock_guard<std::mutex> lock(mtx);
+
+      // check exit flag
+      if (flg_exit) {
+        break;
+      }
+
+      for (auto &eth : log_pool) {
+        std::lock_guard<std::mutex> lock(eth->mtx);
+        std::queue<std::string> &logs = eth->logs;
+
+        while (!logs.empty()) {
+          // convert json to bson
+          std::string &json = logs.front();
+          bson_t *bson      = bson_new_from_json(reinterpret_cast<const uint8_t *>(json.c_str()), -1, &error);
+          if (!bson) {
+            fprintf(stderr, "%s\n", error.message);
+            exit(EXIT_FAILURE);
+          }
+
+          mongoc_bulk_operation_insert(bulk, bson);
+          bson_destroy(bson);
+
+          has_data = true;
+          logs.pop();
+        }
+      }
     }
 
-    std::string &nid  = logs.front().first;
-    std::string &json = logs.front().second;
-
-    // convert json to bson
-    bson_t *bson = bson_new_from_json(reinterpret_cast<const uint8_t *>(json.c_str()), -1, &error);
-    if (!bson) {
-      fprintf(stderr, "%s\n", error.message);
-      exit(EXIT_FAILURE);
+    if (has_data) {
+      bson_t reply;
+      bool ret = mongoc_bulk_operation_execute(bulk, &reply, &error);
+      if (!ret) {
+        fprintf(stderr, "%s\n", error.message);
+        exit(EXIT_FAILURE);
+      }
+      bson_destroy(&reply);
+    } else {
+      sleep(1);
     }
 
-    // add `nid` to bson
-    BSON_APPEND_UTF8(bson, "nid", nid.c_str());
-
-    // intert bson to mongodb
-    if (!mongoc_collection_insert_one(collection, bson, NULL, NULL, &error)) {
-      fprintf(stderr, "%s\n", error.message);
-      exit(EXIT_FAILURE);
-    }
-
-    bson_destroy(bson);
-
-    logs.pop();
+    mongoc_bulk_operation_destroy(bulk);
   }
 
   mongoc_collection_destroy(collection);

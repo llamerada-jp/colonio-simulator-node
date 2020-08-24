@@ -103,7 +103,7 @@ std::unique_ptr<Base> get_simulation(const Config& config, Logger& logger, const
 
 void run(const Config& config) {
   Logger logger;
-  logger.setup(enable_log_stdout);
+  logger.setup(config, enable_log_stdout);
 
   if (enable_log_mongodb) {
     logger.set_mongo(mongo);

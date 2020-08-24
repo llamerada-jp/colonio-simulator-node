@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <set>
 #include <string>
 #include <thread>
 
@@ -15,14 +16,20 @@ class Mongo {
   virtual ~Mongo();
 
   void setup(const Config &config);
-  void output(const std::string &nid, const std::string &json);
+  void output(const std::string &json);
 
  private:
   std::unique_ptr<std::thread> th;
   std::mutex mtx;
-  std::condition_variable cond;
   bool flg_exit;
-  std::queue<std::pair<std::string, std::string>> logs;
+
+  struct EachThread {
+    std::mutex mtx;
+    std::queue<std::string> logs;
+  };
+
+  static thread_local EachThread *eth;
+  std::set<std::unique_ptr<EachThread>> log_pool;
 
   std::string uri_str;
   std::string db_str;

@@ -4,6 +4,10 @@
 #include <sstream>
 #include <string>
 
+bool Config::check(const std::string& path) const {
+  return get_value(path) != nullptr;
+}
+
 void Config::read(const std::string& fname) {
   std::ifstream fs;
   fs.open(fname, std::ios::binary);

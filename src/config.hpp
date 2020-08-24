@@ -7,6 +7,7 @@
 
 class Config {
  public:
+  bool check(const std::string& path) const;
   void read(const std::string& fname);
 
   template<class T>
