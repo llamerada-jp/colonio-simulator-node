@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "colonio/colonio.hpp"
 #include "config.hpp"
 #include "mongo.hpp"
 
@@ -27,7 +28,16 @@ void Logger::set_mongo(Mongo& mongo) {
 }
 
 void Logger::output(const std::string& json) {
-  if (enable_stdout) {
+  picojson::value v;
+  std::string err = picojson::parse(v, json);
+  if (!err.empty()) {
+    std::cerr << err << std::endl;
+    return;
+  }
+  picojson::object& o = v.get<picojson::object>();
+
+  std::string level = o.at("level").get<std::string>();
+  if (enable_stdout || level == colonio::LogLevel::ERROR || level == colonio::LogLevel::WARN) {
     std::cout << json << std::endl;
   }
 
@@ -39,14 +49,6 @@ void Logger::output(const std::string& json) {
       }
     }
 
-    picojson::value v;
-    std::string err = picojson::parse(v, json);
-    if (!err.empty()) {
-      std::cerr << err << std::endl;
-      return;
-    }
-
-    picojson::object& o = v.get<picojson::object>();
     o.insert(std::make_pair("nid", picojson::value(local_nid)));
 
     if (!filter.empty()) {
