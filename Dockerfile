@@ -24,6 +24,16 @@ RUN git clone https://github.com/protocolbuffers/protobuf.git && \
 ADD https://github.com/llamerada-jp/libwebrtc/releases/download/m83/libwebrtc-83.0.4103.97-linux-amd64.tar.gz /work/local
 RUN tar vzxf /work/local/libwebrtc-83.0.4103.97-linux-amd64.tar.gz -C /work/local
 
+# google-glog
+WORKDIR /work
+RUN git clone https://github.com/google/glog.git && \
+  cd glog && \
+  git checkout "refs/tags/v0.4.0" && \
+  ./autogen.sh && \
+  ./configure && \
+  make &&\
+  make install
+
 # libcolonio (tempolary)
 RUN git clone --depth 1 https://github.com/colonio/colonio.git && \
   cp -R /work/colonio/src/colonio /work/local/include/
@@ -40,5 +50,6 @@ RUN mkdir -p /usr/local/lib && \
   apt-get update && \
   apt-get install -y libssl1.1 libmongoc-1.0
 COPY --from=build-env /work/local/lib/libprotobuf.so.21.0.1 /usr/lib/libprotobuf.so.21
+COPY --from=build-env /usr/local/lib/libglog.so.0.0.0 /usr/lib/libglog.so.0
 COPY --from=build-env /work/simulations/simulations /simulations
 ENTRYPOINT /simulations

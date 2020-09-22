@@ -1,5 +1,6 @@
 
 #include <getopt.h>
+#include <glog/logging.h>
 #include <unistd.h>
 
 #include <chrono>
@@ -128,6 +129,9 @@ void run(const Config& config) {
 }
 
 int main(int argc, char* argv[]) {
+  google::InitGoogleLogging(argv[0]);
+  google::InstallFailureSignalHandler();
+
   Config config = decode_options(argc, argv);
 
   if (enable_log_mongodb) {

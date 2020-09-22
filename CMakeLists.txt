@@ -34,6 +34,7 @@ add_executable(simulations
 
 target_link_libraries(simulations
   colonio
+  glog
   webrtc
   protobuf
   pthread
