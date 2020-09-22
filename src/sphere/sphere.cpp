@@ -9,7 +9,8 @@
 static std::random_device rd;
 static std::mt19937 mt(rd());
 static std::uniform_real_distribution<double> rand_ang(-M_PI, M_PI);
-static std::uniform_real_distribution<double> rand_speed(0, 2 * M_PI * 27.77 / 40075000);
+// static std::uniform_real_distribution<double> rand_speed(0, 2 * M_PI * 27.77 / 40075000);
+static std::uniform_real_distribution<double> rand_speed(0, 1.0 / 100.0);
 
 Sphere::Sphere(const Config& config, Logger& logger) : Base(config, logger, 1000) {
 }
