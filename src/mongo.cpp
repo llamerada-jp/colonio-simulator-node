@@ -33,7 +33,7 @@ void Mongo::setup(const Config &config) {
   th       = std::make_unique<std::thread>(&Mongo::run, this);
 }
 
-void Mongo::output(const std::string &json) {
+void Mongo::output(const std::string &nid, const std::string &json) {
   bson_error_t error;
 
   if (eth == nullptr) {
@@ -48,12 +48,18 @@ void Mongo::output(const std::string &json) {
 
   {
     std::lock_guard<std::mutex> lock(eth->mtx);
+    if (eth->nid.empty()) {
+      eth->nid = nid;
+    }
+    assert(eth->nid == nid);
+
     eth->logs.push(json);
   }
 }
 
 void Mongo::run() {
   bson_error_t error;
+  std::map<std::string, unsigned int> log_counts;
 
   mongoc_init();
 
@@ -91,6 +97,13 @@ void Mongo::run() {
         std::lock_guard<std::mutex> lock(eth->mtx);
         std::queue<std::string> &logs = eth->logs;
 
+        auto log_count = log_counts.find(eth->nid);
+        if (log_count == log_counts.end()) {
+          log_counts.insert(std::make_pair(eth->nid, logs.size()));
+        } else {
+          log_count->second += logs.size();
+        }
+
         while (!logs.empty()) {
           // convert json to bson
           std::string &json = logs.front();
@@ -117,6 +130,12 @@ void Mongo::run() {
         exit(EXIT_FAILURE);
       }
       bson_destroy(&reply);
+
+      picojson::object o;
+      for (const auto &it : log_counts) {
+        o.insert(std::make_pair(it.first, picojson::value(static_cast<double>(it.second))));
+      }
+      std::cout << picojson::value(o).serialize() << std::endl;
     } else {
       sleep(1);
     }

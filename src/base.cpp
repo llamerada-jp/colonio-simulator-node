@@ -6,8 +6,8 @@
 
 #include "logger.hpp"
 
-Base::Base(const Config& config_, Logger& logger_, unsigned int interval_) :
-    config(config_), logger(logger_), interval(interval_) {
+Base::Base(colonio::Colonio& c_, const Config& config_, Logger& logger_, unsigned int interval_) :
+    c(c_), config(config_), logger(logger_), interval(interval_) {
 }
 
 Base::~Base() {
@@ -27,10 +27,6 @@ void Base::run() {
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(next_msec - current_msec));
   }
-}
-
-void Base::on_output_log(const std::string& json) {
-  logger.output(json);
 }
 
 std::chrono::system_clock::time_point Base::msec_start = std::chrono::system_clock::now();

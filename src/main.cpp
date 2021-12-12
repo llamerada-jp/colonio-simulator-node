@@ -11,7 +11,7 @@
 #include <thread>
 #include <vector>
 
-#include "base.hpp"
+#include "colonio/colonio.hpp"
 #include "config.hpp"
 #include "logger.hpp"
 #include "mongo.hpp"
@@ -23,11 +23,16 @@ int parallel;
 double interval;
 bool enable_log_mongodb;
 bool enable_log_stdout;
+bool debug_mode;
 
 option options[] = {
-    {"enable_mongodb", no_argument, nullptr, 'm'}, {"enable_stdout", no_argument, nullptr, 's'},
-    {"help", no_argument, nullptr, 'h'},           {"parallel", required_argument, nullptr, 'p'},
-    {"interval", required_argument, nullptr, 'i'}, {0, 0, 0, 0},
+    {"debug_mode", no_argument, nullptr, 'd'},
+    {"enable_mongodb", no_argument, nullptr, 'm'},
+    {"enable_stdout", no_argument, nullptr, 's'},
+    {"help", no_argument, nullptr, 'h'},
+    {"parallel", required_argument, nullptr, 'p'},
+    {"interval", required_argument, nullptr, 'i'},
+    {0, 0, 0, 0},
 };
 
 void print_help(std::ostream& out) {
@@ -41,18 +46,24 @@ void print_help(std::ostream& out) {
   out << "  -s, --enable_stdout       output log to stdout [default disable]" << std::endl;
   out << "  -p, --parallel=NUM        execute simulation thread for NUM parallels [default 1]" << std::endl;
   out << "  -i, --interval=SEC        start simulation thread with SEC second apart [default 1.0]" << std::endl;
+  out << "  -d, --debug_mode          output debug log to stdout when enable_stdout" << std::endl;
 }
 
 Config decode_options(int argc, char* argv[]) {
   parallel           = 1;
   interval           = 1.0;
+  debug_mode         = false;
   enable_log_mongodb = false;
   enable_log_stdout  = false;
 
   int opt;
   int idx_long = 0;
-  while ((opt = getopt_long(argc, argv, "hi:mp:s", options, &idx_long)) != -1) {
+  while ((opt = getopt_long(argc, argv, "dhi:mp:s", options, &idx_long)) != -1) {
     switch (opt) {
+      case 'd':
+        debug_mode = true;
+        break;
+
       case 'h':
         print_help(std::cout);
         exit(EXIT_SUCCESS);
@@ -97,13 +108,14 @@ Config decode_options(int argc, char* argv[]) {
   return config;
 }
 
-std::unique_ptr<Base> get_simulation(const Config& config, Logger& logger, const std::string& name) {
+std::unique_ptr<Base> get_simulation(
+    colonio::Colonio* c, const Config& config, Logger& logger, const std::string& name) {
   std::unique_ptr<Base> sim;
 
   if (name == "sphere") {
-    sim = std::make_unique<Sphere>(config, logger);
+    sim = std::make_unique<Sphere>(*c, config, logger);
   } else if (name == "plane") {
-    sim = std::make_unique<Plane>(config, logger);
+    sim = std::make_unique<Plane>(*c, config, logger);
   }
 
   if (!sim) {
@@ -116,14 +128,21 @@ std::unique_ptr<Base> get_simulation(const Config& config, Logger& logger, const
 
 void run(const Config& config) {
   Logger logger;
-  logger.setup(config, enable_log_stdout);
+  logger.setup(config, enable_log_stdout, debug_mode);
+
+  auto c = colonio::Colonio::new_instance([&](colonio::Colonio& c, const std::string& message) {
+    logger.output(message);
+  });
+  std::unique_ptr<colonio::Colonio> node(c);
+  logger.get_local_nid = [&]() {
+    return c->get_local_nid();
+  };
 
   if (enable_log_mongodb) {
     logger.set_mongo(mongo);
   }
 
-  std::shared_ptr<Base> sim = get_simulation(config, logger, config.get<std::string>("simulation name"));
-  logger.get_local_nid      = [sim]() { return sim->get_local_nid(); };
+  std::unique_ptr<Base> sim = get_simulation(node.get(), config, logger, config.get<std::string>("simulation name"));
 
   sim->run();
 }

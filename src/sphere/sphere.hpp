@@ -11,7 +11,7 @@ class Sphere : public Base {
   double speed;
   double ang;
 
-  Sphere(const Config& config, Logger& logger);
+  Sphere(colonio::Colonio& c, const Config& config, Logger& logger);
 
   void setup() override;
   void step() override;

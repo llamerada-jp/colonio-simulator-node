@@ -11,7 +11,7 @@ class Plane : public Base {
   double speed;
   double ang;
 
-  Plane(const Config& config, Logger& logger);
+  Plane(colonio::Colonio& c, const Config& config, Logger& logger);
 
   void setup() override;
   void step() override;

@@ -16,7 +16,7 @@ class Mongo {
   virtual ~Mongo();
 
   void setup(const Config &config);
-  void output(const std::string &json);
+  void output(const std::string &nid, const std::string &json);
 
  private:
   std::unique_ptr<std::thread> th;
@@ -25,6 +25,7 @@ class Mongo {
 
   struct EachThread {
     std::mutex mtx;
+    std::string nid;
     std::queue<std::string> logs;
   };
 

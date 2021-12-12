@@ -1,4 +1,6 @@
-.vscode/
-build/
-local/
-libcolonio.a
+/.vscode
+/build
+/local
+/libcolonio.a
+/*.tar.gz
+/*.img

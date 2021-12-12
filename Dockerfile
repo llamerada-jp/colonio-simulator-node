@@ -13,7 +13,7 @@ RUN git clone https://github.com/kazuho/picojson.git
 WORKDIR /work
 RUN git clone https://github.com/protocolbuffers/protobuf.git && \
   cd protobuf && \
-  git checkout "refs/tags/v3.10.1" && \
+  git checkout "refs/tags/v3.15.8" && \
   git submodule update --init --recursive && \
   ./autogen.sh && \
   ./configure --prefix=/work/local && \
@@ -21,8 +21,9 @@ RUN git clone https://github.com/protocolbuffers/protobuf.git && \
   make install
 
 # libwebrtc
-ADD https://github.com/llamerada-jp/libwebrtc/releases/download/m83/libwebrtc-83.0.4103.97-linux-amd64.tar.gz /work/local
-RUN tar vzxf /work/local/libwebrtc-83.0.4103.97-linux-amd64.tar.gz -C /work/local
+# ADD https://github.com/llamerada-jp/libwebrtc/releases/download/m96/libwebrtc-96.0.4664.45-linux-amd64.tar.gz /work/local
+COPY libwebrtc-96.0.4664.45-linux-amd64.tar.gz /work/local/libwebrtc-96.0.4664.45-linux-amd64.tar.gz
+RUN tar vzxf /work/local/libwebrtc-96.0.4664.45-linux-amd64.tar.gz -C /work/local
 
 # google-glog
 WORKDIR /work
@@ -48,8 +49,8 @@ RUN cmake -DLOCAL_ENV_PATH=/work/local . && \
 FROM ubuntu:20.04
 RUN mkdir -p /usr/local/lib && \
   apt-get update && \
-  apt-get install -y libssl1.1 libmongoc-1.0
-COPY --from=build-env /work/local/lib/libprotobuf.so.21.0.1 /usr/lib/libprotobuf.so.21
+  apt-get install -y libssl1.1 libmongoc-1.0 valgrind
+COPY --from=build-env /work/local/lib/libprotobuf.so.26.0.8 /usr/lib/libprotobuf.so.26
 COPY --from=build-env /usr/local/lib/libglog.so.0.0.0 /usr/lib/libglog.so.0
 COPY --from=build-env /work/simulations/simulations /simulations
 ENTRYPOINT /simulations

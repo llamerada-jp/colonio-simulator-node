@@ -12,8 +12,9 @@ Logger::Logger() : mongo(nullptr) {
 Logger::~Logger() {
 }
 
-void Logger::setup(const Config& config, bool enable_stdout) {
+void Logger::setup(const Config& config, bool enable_stdout, bool debug_mode) {
   this->enable_stdout = enable_stdout;
+  this->debug_mode    = debug_mode;
 
   if (config.check("logs")) {
     const picojson::array& logs = config.get<picojson::array>("logs");
@@ -36,19 +37,19 @@ void Logger::output(const std::string& json) {
   }
   picojson::object& o = v.get<picojson::object>();
 
+  if (local_nid.empty() && static_cast<bool>(get_local_nid)) {
+    local_nid = get_local_nid();
+    if (local_nid.empty()) {
+      return;
+    }
+  }
+
   std::string level = o.at("level").get<std::string>();
-  if (enable_stdout || level == colonio::LogLevel::ERROR || level == colonio::LogLevel::WARN) {
-    std::cout << json << std::endl;
+  if (enable_stdout && (debug_mode || level == colonio::LogLevel::ERROR || level == colonio::LogLevel::WARN)) {
+    std::cout << local_nid << ":" << json << std::endl;
   }
 
   if (mongo) {
-    if (local_nid.empty() && static_cast<bool>(get_local_nid)) {
-      local_nid = get_local_nid();
-      if (local_nid.empty()) {
-        return;
-      }
-    }
-
     o.insert(std::make_pair("nid", picojson::value(local_nid)));
 
     if (!filter.empty()) {
@@ -58,6 +59,6 @@ void Logger::output(const std::string& json) {
       }
     }
 
-    mongo->output(picojson::value(o).serialize());
+    mongo->output(local_nid, picojson::value(o).serialize());
   }
 }

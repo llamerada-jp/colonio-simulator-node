@@ -7,19 +7,18 @@
 class Config;
 class Logger;
 
-class Base : public colonio::Colonio {
+class Base {
  public:
-  Base(const Config& config_, Logger& logger_, unsigned int interval_);
+  Base(colonio::Colonio& c_, const Config& config_, Logger& logger_, unsigned int interval_);
   virtual ~Base();
 
   void run();
 
  protected:
+  colonio::Colonio& c;
   const Config& config;
   Logger& logger;
   const unsigned int interval;
-
-  void on_output_log(const std::string& json) override;
 
   static std::chrono::system_clock::time_point msec_start;
   static int64_t get_current_msec();
